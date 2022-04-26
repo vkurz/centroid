@@ -1,0 +1,465 @@
+#!/bin/bash
+
+LaunchDir=$PWD
+echo $LaunchDir
+################### REMOVE_OLD_OUTPUT-FILES #######################
+rm -f to_consider to_remove check_difference E_sorted_local_min_individual_ E_sorted_local_min_individual.txt 
+rm -rf  E_local_min_individual 
+###################################################################
+cat E_sorted_local_min.csv | awk '{print $1}' > name #E sorted NAMES
+
+############################################ WORKING WITH MATRIXES
+############################################ WORKING WITH MATRIXES
+############################################ WORKING WITH MATRIXES
+############################################ WORKING WITH MATRIXES
+############################################ WORKING WITH MATRIXES
+for iname in $(cat name | awk '{print $1}')
+do
+############################################ EXTRACT XYZ FROM LOG FILE
+Anum=`cat "$iname".log |grep -H "Rotational constants (GHZ):   " -B 2 | tail -7 | awk '{print $3}'| head -1`; echo "Number of atoms in $iname.log is $Anum";
+let b=$(($Anum + 5)); 
+grep -H " Largest concise Abelian subgroup " $iname.log -A $b | tail -$Anum | awk '{print $5,$6,$7,$8}' > $iname.gxyz 
+
+echo "calculation of schwerpunkt in "$iname
+############################################ SCHWERPUNKT X
+sumx=`awk '{ sum += $1 } END {printf "%.20f\n", sum }' $iname.gxyz`  
+#echo $sumx
+schwerx=`echo "scale=20;$sumx / $Anum" | bc -l `;
+#echo $schwerx
+############################################ SCHWERPUNKT Y
+sumy=`awk '{ sum += $2 } END {printf "%.20f\n", sum }' $iname.gxyz`  
+#echo $sumy
+schwery=`echo "scale=20;$sumy / $Anum" | bc -l `;
+#echo $schwery
+############################################ SCHWERPUNKT Z
+sumz=`awk '{ sum += $3 } END {printf "%.20f\n", sum }' $iname.gxyz`  
+#echo $sumz
+schwerz=`echo "scale=20; $sumz / $Anum" | bc -l `;
+#echo $schwerz
+############################################ SCHWERPUNKT XYZ
+echo "calculated SUMS      XYZ" $sumx $sumy $sumz
+echo "will be devided by      " $Anum $Anum $Anum
+echo "SCHWERPUNKT/Centroid XYZ" $schwerx $schwery $schwerz
+
+############################ define matrixes
+############################ define matrixes
+############################ define matrixes
+############################ define matrixes
+############################ define matrixes
+matrix1=(`cat $iname.gxyz`)                 #Matrix of MOLECULE XYZ
+matrix2=(`echo $schwerx $schwery $schwerz`) #Matrix of SCHWERPUNKT
+rows=$Anum  # N of atoms
+cols=3      # X,Y,Z
+
+############################ 1111111111 GEOMETRY matrix | Current GEOMETRY
+############################ 1111111111 GEOMETRY matrix | Current GEOMETRY
+############################ 1111111111 GEOMETRY matrix | Current GEOMETRY
+############################ 1111111111 GEOMETRY matrix | Current GEOMETRY
+############################ 1111111111 GEOMETRY matrix | Current GEOMETRY
+echo "First: GEOMETRY matrix"
+for((i=0; i<rows; i++))
+do
+  for((j=0; j<cols; j++))
+  do
+    index=$((i*cols+j))
+    echo -n "${matrix1[index]} " #space needed
+  done
+  echo
+done #> echo_delete # do NO echo
+
+############################ 2222222222 CENTROID matrix | SCHWERPUNKT/Centroid XYZ
+############################ 2222222222 CENTROID matrix | SCHWERPUNKT/Centroid XYZ
+############################ 2222222222 CENTROID matrix | SCHWERPUNKT/Centroid XYZ
+############################ 2222222222 CENTROID matrix | SCHWERPUNKT/Centroid XYZ
+############################ 2222222222 CENTROID matrix | SCHWERPUNKT/Centroid XYZ
+echo "Second: CENTROID matrix"
+for((i=0; i<rows; i++))
+do
+  for((j=0; j<cols; j++))
+  do
+    indexo=$((0+j))
+    echo -n "${matrix2[indexo]} " #space needed
+  done
+  echo
+done #> echo_delete # do NO echo
+############################
+
+############################ 3333333333 ComponentsToAbsoluteDistanceToCentroid matrix | second MINUS first matrix
+############################ 3333333333 ComponentsToAbsoluteDistanceToCentroid matrix | second MINUS first matrix
+############################ 3333333333 ComponentsToAbsoluteDistanceToCentroid matrix | second MINUS first matrix
+############################ 3333333333 ComponentsToAbsoluteDistanceToCentroid matrix | second MINUS first matrix
+############################ 3333333333 ComponentsToAbsoluteDistanceToCentroid matrix | second MINUS first matrix
+k=0
+matrix3=()
+for((i=0; i<rows; i++))
+do
+  for((j=0; j<cols; j++))
+  do
+    index=$((i*cols+j))
+    indexo=$((0+j))
+    aaa=`echo ${matrix1[index]}`
+    bbb=`echo ${matrix2[indexo]}`    
+    matrix3[k]=`echo "a=$aaa; b=$bbb; x=sqrt((a-b)*(a-b)); x"| bc`
+    k=$((k+1))
+  done
+done
+############################ 3333333333 SAVE ComponentsToAbsoluteDistanceToCentroid matrix to a file
+for((i=0; i<rows; i++))
+do
+  for((j=0; j<cols; j++))
+  do
+    index=$((i*cols+j))
+    echo -n "${matrix3[index]} "
+  done
+  echo
+done > $iname.thirdmartix        
+############################ 3333333333 ECHO ComponentsToAbsoluteDistanceToCentroid matrix
+echo "Third: ComponentsToAbsoluteDistanceToCentroid matrix"
+for((i=0; i<rows; i++))
+do
+  for((j=0; j<cols; j++))
+  do
+    index=$((i*cols+j))
+    echo -n "${matrix3[index]} "
+  done
+  echo
+done
+done
+
+############################ COMPARISON of ComponentsToAbsoluteDistanceToCentroid matrix
+############################ COMPARISON of ComponentsToAbsoluteDistanceToCentroid matrix
+############################ COMPARISON of ComponentsToAbsoluteDistanceToCentroid matrix
+############################ COMPARISON of ComponentsToAbsoluteDistanceToCentroid matrix
+############################ COMPARISON of ComponentsToAbsoluteDistanceToCentroid matrix
+linenumber=1                                                #start from 1st line
+alllines=`wc -l name | awk '{print $1}'`                    #number of all lines
+the_best_iname=`cat name | head -1| awk '{print $1}'`
+for iname in $(cat name | awk '{print $1}')
+do
+if [ $(echo "$linenumber < $alllines" | bc) -eq 1 ]; then
+echo "comparison № "$linenumber
+linenumber=$((linenumber+1))
+echo $iname
+echo `cat name | head -$linenumber| tail -1`
+next_iname=`cat name | head -$linenumber| tail -1`
+this_matrix=(`cat $iname.thirdmartix`)                      #Matrix
+next_matrix=(`cat $next_iname.thirdmartix`)                 #Matrix
+############################ CURRENT ComponentsToAbsoluteDistanceToCentroid matrix
+#echo "Echo CURRENT XYZ matrix"
+for((i=0; i<rows; i++))
+do
+  for((j=0; j<cols; j++))
+  do
+    index=$((i*cols+j))
+    echo -n "${this_matrix[index]} "
+  done
+  echo
+done > echo_delete # do NO echo
+############################ NEXT ComponentsToAbsoluteDistanceToCentroid matrix
+#echo "Echo NEXT XYZ matrix"
+for((i=0; i<rows; i++))
+do
+  for((j=0; j<cols; j++))
+  do
+    index=$((i*cols+j))
+    echo -n "${next_matrix[index]} "
+  done
+  echo
+done > echo_delete # do NO echo
+############################ NEXT minus CURRENT ComponentsToAbsoluteDistanceToCentroid matrix
+k=0
+difference_matrix=()
+for((i=0; i<rows; i++))
+do
+  for((j=0; j<cols; j++))
+  do
+    index=$((i*cols+j))
+    aaa=`echo ${this_matrix[index]}`
+    bbb=`echo ${next_matrix[index]}`
+    difference_matrix[k]=`echo "a=$aaa; b=$bbb; x=sqrt((a-b)*(a-b)); x"| bc`
+    k=$((k+1))
+  done
+done
+############################ NEXT minus CURRENT ComponentsToAbsoluteDistanceToCentroid matrix
+echo "NEXT minus CURRENT ComponentsToAbsoluteDistanceToCentroid matrix"
+for((i=0; i<rows; i++))
+do
+  for((j=0; j<cols; j++))
+  do
+    index=$((i*cols+j))
+    echo -n "${difference_matrix[index]} "
+  done
+  echo
+done #> echo_delete
+
+############################ geomery-hash BEGINING
+############################ geomery-hash BEGINING
+############################ geomery-hash BEGINING
+############################ geomery-hash BEGINING
+############################ geomery-hash BEGINING
+############################ geomery-hash BEGINING
+############################ geomery-hash BEGINING
+############################ geomery-hash BEGINING
+############################ geomery-hash BEGINING
+############################ geomery-hash BEGINING
+
+############################ NEXT minus BEST ComponentsToAbsoluteDistanceToCentroid matrix
+############################ calculate 
+the_best_matrix=(`cat $the_best_iname.thirdmartix`)  #from 1st line
+k=0
+difference_matrix_with_the_best=()
+for((i=0; i<rows; i++))
+do
+  for((j=0; j<cols; j++))
+  do
+    index=$((i*cols+j))
+    aaa=`echo ${the_best_matrix[index]}`
+    bbb=`echo ${next_matrix[index]}`
+    difference_matrix_with_the_best[k]=`echo "a=$aaa; b=$bbb; x=sqrt((a-b)*(a-b)); x"| bc`
+    k=$((k+1))
+  done
+done 
+
+############################ NEXT minus BEST ComponentsToAbsoluteDistanceToCentroid matrix
+############################ echo 
+echo "NEXT minus BEST ComponentsToAbsoluteDistanceToCentroid matrix"
+for((i=0; i<rows; i++))
+do
+  for((j=0; j<cols; j++))
+  do
+    index=$((i*cols+j))
+    echo -n "${difference_matrix_with_the_best[index]} "
+  done
+  echo
+done 
+echo "Save NEXT minus BEST ComponentsToAbsoluteDistanceToCentroid matrix to a file"
+for((i=0; i<rows; i++))
+do
+  for((j=0; j<cols; j++))
+  do
+    index=$((i*cols+j))
+    echo -n "${difference_matrix_with_the_best[index]}"
+  done
+  echo
+done > $next_iname.ddXYZmatrix 
+sumddx=`awk '{ sum += $1 } END {printf "%.5f\n", sum }' $next_iname.ddXYZmatrix`
+sumddy=`awk '{ sum += $2 } END {printf "%.5f\n", sum }' $next_iname.ddXYZmatrix`  
+sumddz=`awk '{ sum += $3 } END {printf "%.5f\n", sum }' $next_iname.ddXYZmatrix`  
+echo sumddx = $sumddx
+echo sumddy = $sumddy
+echo sumddz = $sumddz
+ddXYZ=`echo "$sumddx+$sumddy+$sumddz" | bc -l `;
+echo $ddXYZ > $next_iname.ddXYZ
+############################
+echo "Save DifferenceInComponentsToAbsoluteDistanceToCentroid matrix"
+for((i=0; i<rows; i++))
+do
+  for((j=0; j<cols; j++))
+  do
+    index=$((i*cols+j))
+    echo -n "${difference_matrix[index]}"
+  done
+  echo
+done > $iname.difference_matrix
+
+echo "Calculate and Save the Sum of the DifferenceInComponentsToAbsoluteDistanceToCentroid around 
+all the atoms and coordinates. Or so called geomery-hash."
+
+sumdx=`awk '{ sum += $1 } END { print sum }' $iname.difference_matrix`  
+sumdy=`awk '{ sum += $2 } END { print sum }' $iname.difference_matrix`  
+sumdz=`awk '{ sum += $3 } END { print sum }' $iname.difference_matrix`  
+dXYZ=`echo "$sumdx+$sumdy+$sumdz" | bc -l `;
+
+echo "FOR" $next_iname "dXYZ="$dXYZ 
+#Save geomery-hash...
+echo $next_iname $dXYZ > $next_iname.dXYZ
+############################ geomery-hash ENDING
+############################ geomery-hash ENDING
+############################ geomery-hash ENDING
+############################ geomery-hash ENDING
+############################ geomery-hash ENDING
+############################ geomery-hash ENDING
+############################ geomery-hash ENDING
+############################ geomery-hash ENDING
+############################ geomery-hash ENDING
+############################ geomery-hash ENDING
+
+############################ IS THERE a difference in X/Y/Z position > 0.05 Angström?
+############################ IS THERE a difference in X/Y/Z position > 0.05 Angström?
+############################ IS THERE a difference in X/Y/Z position > 0.05 Angström?
+############################ IS THERE a difference in X/Y/Z position > 0.05 Angström?
+############################ IS THERE a difference in X/Y/Z position > 0.05 Angström?
+############################ IS THERE a difference in X/Y/Z position > 0.05 Angström?
+a_coord_of_some_atom_with_diff_position=0
+echo "diff_position > 0.05 Angström? "
+for((i=0; i<rows; i++))
+do
+  for((j=0; j<cols; j++))
+  do
+    index=$((i*cols+j))
+    if [ $(echo "${difference_matrix[index]} > 0.01" | bc) -eq 1 ]; then
+    #echo "yes"
+    a_coord_of_some_atom_with_diff_position=$((a_coord_of_some_atom_with_diff_position+1))
+    #else
+    #echo "no"
+    fi
+  done
+done #> firstmatrix
+
+#calc YES NO YES NO YES NO YES NO YES NO YES NO YES NO YES NO YES NO 
+k=0
+yesnomatrix=()
+for((i=0; i<rows; i++))
+do
+  for((j=0; j<cols; j++))
+  do
+    if [ $(echo "${difference_matrix[index]} > 0.05" | bc) = 1 ]
+    then
+    index=$((i*cols+j))
+    yesnomatrix[k]=`echo "yes "`
+        k=$((k+1))
+    else
+    index=$((i*cols+j))
+    yesnomatrix[k]=`echo "no  "`
+        k=$((k+1))
+    fi;
+  done
+done 
+
+#echo YES NO YES NO YES NO YES NO YES NO YES NO YES NO YES NO YES NO 
+rows_count=0
+for((i=0; i<rows; i++))
+do
+rows_count=$(($rows_count+1))
+echo -n "$rows_count "
+  for((j=0; j<cols; j++))
+  do
+    indexoo=$((i*cols+j))
+    echo -n "${yesnomatrix[indexoo]}"
+  done
+  echo
+done #> echo_delete # do NO echo
+############################
+
+echo $a_coord_of_some_atom_with_diff_position in $next_iname >> check_difference
+if [ $(echo "$a_coord_of_some_atom_with_diff_position > 0" | bc) -eq 1 ]; then
+echo $iname >> to_consider
+else echo $iname >> to_remove
+fi;
+else echo $iname >> to_consider
+fi;
+done
+
+rm -f E_sorted_local_min_individual_ #update
+cat E_sorted_local_min.csv |head -1| awk '{print $1}' >> E_sorted_local_min_individual_
+
+alllines2=`wc -l check_difference | awk '{print $1}'`
+kk=0
+for inumber in $(cat check_difference  | awk '{print $1}')
+do
+kk=$((kk+1))
+if [ $(echo "$inumber  > 0" | bc) -eq 1 ]; then
+indiv_str_name=`cat check_difference | head -$kk | tail -1| awk '{print $3}'`
+echo yes $inumber times for $indiv_str_name 
+echo $indiv_str_name >> E_sorted_local_min_individual_
+else
+echo yes $inumber times for "$indiv_str_name" - replicant of the previos
+fi;
+done
+
+for i in $(cat E_sorted_local_min_individual_ | awk '{print $1}')
+do
+grep "$i " E_sorted_local_min.csv >> E_sorted_local_min_individual.txt ####grep can make problems. ONLY "$i " !!!!
+done
+############################
+############################
+############################
+############################
+############################
+
+####################### ABC
+#sort -k1 E_sorted_local_min_individual.txt > E_sorted_local_min_individual.txt_ABC
+cat E_sorted_local_min_individual.txt > E_sorted_local_min_individual.txt_
+########################
+
+the_best_iname=`cat E_sorted_local_min_individual.txt_ | head -1| awk '{print $1}'`
+
+echo "0.00000" > $the_best_iname.ddXYZ
+for iname in $(cat E_sorted_local_min_individual.txt_ | awk '{print $1}')
+do
+cat $iname.ddXYZ
+done > ddXYZ_E_sorted_local_min_individual
+
+
+paste E_sorted_local_min_individual.txt_ ddXYZ_E_sorted_local_min_individual > E_sorted_local_min_individual.csv
+
+
+####################################### CLEAN UP
+rm -r *difference_matrix *ddXYZmatrix ddXYZ_E_sorted_local_min_individual 
+rm -r *dXYZ
+rm -r E_sorted_local_min_individual.txt
+rm -f E_sorted_local_min_individual.txt_
+rm -f *gxyz *gxyz_sumx  check_difference E_sorted_local_min_individual_
+rm -f to_consider to_remove  echo_delete  name #NAME IS e SORTED
+rm -f *thirdmartix
+################################## SAVE FILES
+rm -rf E_local_min_individual
+mkdir E_local_min_individual
+
+for i in $(cat E_sorted_local_min_individual.csv | awk '{print $1}')
+do
+#grep "$i " E_sorted_local_min.csv >> E_sorted_local_min_individual.txt ####grep can make problems. ONLY "$i " !!!!
+cp $LaunchDir/$i.log $LaunchDir/E_local_min_individual/
+done
+##################################
+
+
+echo "Filename ZPE1 δH.1 δG.1 Etot <S²> 1st_freq hash" >> beautiful_output
+head -5 E_sorted_local_min_individual.csv >> beautiful_output
+sed 's/\t/ /' $LaunchDir/beautiful_output > beautiful_output_f
+column -t -s' ' beautiful_output_f
+rm -f beautiful_output beautiful_output_f
+
+#echo "Filename ZPE1 δH.1 δG.1 Etot S_quadrat 1-st_freq"
+#head -5 E_sorted_local_min_individual.csv
+echo ...
+
+echo "
+    _
+   / \__
+  (    @\___
+  /         O     Done!
+ /   (_____/
+/_____/   U
+   
+Centroid Comparison Script (CCS)
+
+© 2020 - 2022 Vasily N. Korotenko
+Please report all suggestion, changes, improvements, and usage to
+<vakoch@cup.uni-muenchen.de>
+"
+############### DELETE EMPTY FOLDERS
+find . -iname "E_local_min_individual" -type d -empty -delete & #-maxdepth 1
+find . -iname "TS" -type d -empty -delete & #-maxdepth 1
+
+################### GOODVIBES
+/scr7/vasily/scripts/schwerpunkt/schwerpunkt_qh
+################### CLEAN UP
+rm -f E_sorted_local_min_individual.csv
+rm -f E_sorted_local_min.csv
+rm -rf E_local_min
+################### OPEN THE RESULST
+#libreoffice --calc ./E_sorted_local_min_individual_qh.csv
+
+exit
+echo "EXIT EXIT EXIT EXIT EXIT EXIT EXIT "
+echo "EXIT EXIT EXIT EXIT EXIT EXIT EXIT "
+echo "EXIT EXIT EXIT EXIT EXIT EXIT EXIT "
+echo "EXIT EXIT EXIT EXIT EXIT EXIT EXIT "
+echo "EXIT EXIT EXIT EXIT EXIT EXIT EXIT "
+echo "EXIT EXIT EXIT EXIT EXIT EXIT EXIT "
+echo "EXIT EXIT EXIT EXIT EXIT EXIT EXIT "
+echo "EXIT EXIT EXIT EXIT EXIT EXIT EXIT "
+echo "EXIT EXIT EXIT EXIT EXIT EXIT EXIT "
+echo "EXIT EXIT EXIT EXIT EXIT EXIT EXIT "
+#exit
