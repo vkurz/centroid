@@ -16,8 +16,6 @@ Disadvantages:
 recommended to reduce the number of structures under consideration, using first ESS and then
 CCS. In this case, CCS uses results obtained from ESS to find geometrically individual structures.
 
-
-
 © 2020 - 2022 Vasily N. Korotenko
 Please report all suggestion, changes, improvements, and usage to
-<vakoch@cup.uni-muenchen.de>
+<vnkorotenko@gmail.com>
