@@ -1,5 +1,5 @@
 # ccs
-Centroid Comparison Script make a comparison of geometries from Gaussian-log-file using their centroid-point as a reference.
+Centroid Comparison Script makes a comparison of geometries from Gaussian-log-file using their centroid-point as a reference.
 
 Benefits:
 - CCS fixes all disadvantages of ESS
